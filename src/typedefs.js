@@ -1,4 +1,4 @@
-import { enumContentType } from './enumContentType'
+import { enumContentType } from './enumContentType.js'
 
 
 /**

@@ -1,4 +1,4 @@
-import { enumContentType } from './enumContentType'
+import { enumContentType } from './enumContentType.js'
 
 
 export class DgraphTransaction { // https://dgraph.io/docs/dql/clients/raw-http/

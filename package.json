@@ -1,6 +1,6 @@
 {
   "name": "@feelinglovelynow/dgraph",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "license": "MIT",
   "type": "module",
   "types": "./src/index.ts",
@@ -24,7 +24,7 @@
   "scripts": {
     "clear": "rm -rf ./dist ./tsc",
     "createTypes": "pnpm tsc",
-    "minify": "chmod +x build.js && ./build.js",
+    "minify": "chmod +x build.cjs && ./build.cjs",
     "build": "pnpm clear && pnpm createTypes && pnpm minify"
   },
   "devDependencies": {
