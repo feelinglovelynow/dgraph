@@ -9,7 +9,8 @@ require('esbuild')
     entryPoints: [ // This is an array of files that each serve as an input to the bundling algorithm.
       './tsc/DgraphTransaction.js',
       './tsc/enumContentType.js',
-      './tsc/index.js'
+      './tsc/index.js',
+      './tsc/typedefs.js',
     ],
   })
   .catch(() => process.exit(1))
