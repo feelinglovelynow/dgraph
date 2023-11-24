@@ -1,10 +1,11 @@
 {
   "name": "@feelinglovelynow/dgraph",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "license": "MIT",
   "description": "Features a DgraphTransaction class that creates a transaction object with lots of features to ease workflow with dgraph cloud instances.",
   "author": "https://github.com/feelinglovelynow?tab=repositories",
   "exports": "./dist/index.js",
+  "module": "./dist/index.js",
   "types": "./tsc/index.d.ts",
   "keywords": [
     "dgraph",
