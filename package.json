@@ -1,10 +1,10 @@
 {
   "name": "@feelinglovelynow/dgraph",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "license": "MIT",
   "type": "module",
-  "types": "./src/index.ts",
-  "exports": "./src/index.js",
+  "types": "./dist/index.ts",
+  "exports": "./dist/index.js",
   "description": "Features a DgraphTransaction class that creates a transaction object with lots of features to ease workflow with dgraph cloud instances.",
   "author": "https://github.com/feelinglovelynow?tab=repositories",
   "files": [
@@ -25,7 +25,8 @@
     "clear": "rm -rf ./dist ./tsc",
     "createTypes": "pnpm tsc",
     "minify": "chmod +x build.cjs && ./build.cjs",
-    "build": "pnpm clear && pnpm createTypes && pnpm minify"
+    "copy": "cp ./src/index.ts ./dist/index.ts",
+    "build": "pnpm clear && pnpm createTypes && pnpm minify && pnpm copy"
   },
   "devDependencies": {
     "esbuild": "^0.19.7",
