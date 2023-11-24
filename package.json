@@ -1,0 +1,35 @@
+{
+  "name": "@feelinglovelynow/dgraph",
+  "version": "1.0.0",
+  "license": "MIT",
+  "description": "Features a DgraphTransaction class that creates a transaction object with lots of features to ease workflow with dgraph cloud instances.",
+  "author": "https://github.com/feelinglovelynow?tab=repositories",
+  "main": "./dist/index.js",
+  "types": "./tsc/index.d.ts",
+  "keywords": [
+    "dgraph",
+    "graph",
+    "database",
+    "edge",
+    "cloud",
+    "svelte",
+    "react"
+  ],
+  "scripts": {
+    "clear": "rm -rf ./dist ./tsc",
+    "createTypes": "pnpm tsc",
+    "minify": "chmod +x build.js && ./build.js",
+    "build": "pnpm clear && pnpm createTypes && pnpm minify"
+  },
+  "devDependencies": {
+    "esbuild": "^0.19.7",
+    "typescript": "^5.3.2"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/feelinglovelynow/dgraph.git"
+  },
+  "bugs": {
+    "url": "https://github.com/feelinglovelynow/dgraph/issues"
+  }
+}
