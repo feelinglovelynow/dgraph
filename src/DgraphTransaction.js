@@ -1,75 +1,62 @@
 import { enumContentType } from './enumContentType.js'
 
 
-export class DgraphTransaction { // https://dgraph.io/docs/dql/clients/raw-http/
-  /**
-   * @type { string[] }
-   */
-  #keys = []
-  /**
-   * @type { string[] }
-   */
-  #preds = []
-  #hash = ''
-  #startTs = 0
-  #timeout = 600
-  #apiKey = ''
-  #isClosed = false
-  #isAborted = false
-  #isCommited = false
-  #endpoint = ''
-  #didMutations = false // IF any mutations were done during transactions life
-  #readOnly = false // readOnly transactions are useful to increase read speed because they can circumvent the usual consensus protocol. Read-only transactions cannot contain mutations
-  #bestEffort = false // bestEffort flag asks Dgraph Alpha to try to get timestamps from memory on a best-effort basis to reduce the number of outbound requests to Zero. This may yield improved latencies in read-bound workloads where linearizable reads are not strictly needed
+/**
+ * Creates a transaction object with lots of features to ease workflow with [dgraph cloud instances](https://dgraph.io/product). Guidance came from [here](https://dgraph.io/docs/dql/clients/raw-http/).
+ * @param { import('./typedefs.js').DgraphTransactionConstructor } params
+ */
+export function DgraphTransaction ({ apiKey, endpoint, readOnly, bestEffort, timeout }) {
+  if (!apiKey) throw { id: 'fln__dgraph__missing-apiKey', message: 'Transaction constructor needs an apiKey', _errorData: { apiKey } }
+  if (!endpoint) throw { id: 'fln__dgraph__missing-endpoint', message: 'Transaction constructor needs an endpoint', _errorData: { endpoint } }
 
 
-  /**
-   * Creates a transaction object with lots of features to ease workflow with [dgraph cloud instances](https://dgraph.io/product). Guidance came from [here](https://dgraph.io/docs/dql/clients/raw-http/).
-   * @param { Object } param
-   * @param { string } param.apiKey Found @ Dgraph Cloud > Settings > Api Keys
-   * @param { string } param.endpoint Found @ Dgraph Cloud > GraphQL Endpoint. **IMPORTANT: remove /graphql from endpoint before sending to this constructor**
-   * @param { boolean= } param.readOnly Optional: Read only transactions are useful to increase read speed because they can circumvent the usual consensus protocol. Read-only transactions cannot contain mutations.
-   * @param { boolean= } param.bestEffort Optional: Asks Dgraph Alpha to try to get timestamps from memory on a best-effort basis to reduce the number of outbound requests to Zero. This may yield improved latencies in read-bound workloads where linearizable reads are not strictly needed.
-   * @param { number } [param.timeout=600] DEFAULT is 600: Max seconds any query of this transaction will be allowed to be attempted
-  */
-  constructor ({ apiKey, endpoint, readOnly, bestEffort, timeout }) {
-    if (!apiKey) throw { id: 'fln__dgraph__missing-apiKey', message: 'Transaction constructor needs an apiKey', _errorData: { apiKey } }
-    if (!endpoint) throw { id: 'fln__dgraph__missing-endpoint', message: 'Transaction constructor needs an endpoint', _errorData: { endpoint } }
+  /** @type { string[] } */
+  let keys
+  /** @type { string[] } */
+  let preds
+  /** @type { string } */
+  let hash
+  /** @type { number } */
+  let startTs = 0
+  /** @type { boolean } */
+  let isAborted
+  /** @type { boolean } */
+  let isClosed = false
+  /** @type { boolean } */
+  let isCommited = false
+  /** @type { boolean } */
+  let didMutations = false
 
-    this.#apiKey = apiKey
-    this.#endpoint = endpoint
 
-    if (readOnly) this.#readOnly = true
-    if (timeout) this.#timeout = timeout
-    if (bestEffort) this.#bestEffort = true
-  }
+  if (!timeout) timeout = 600
+  if (!readOnly) readOnly = false
 
 
   /**
    * Query dgraph cloud instance. Only accepts DQL syntax. IF closeWhenDone is set to true the transaction will not be allowed to be used again (does not send a request to dgraph cloud instance, just sets this.isClosed to true)
    * @param { boolean } closeWhenDone - IF closeWhenDone is set to true the transaction will not be allowed to be used again (does not send a request to dgraph cloud instance, just sets this.isClosed to true)
    * @param { string } query - Only accepts DQL syntax.
-   * @returns { Promise<import('./typedefs').DgraphResponse> }
+   * @returns { Promise<import('./typedefs.js').DgraphResponse> }
   */
-  async query (closeWhenDone, query) {
-    if (this.#isAborted) throw { id: 'fln__dgraph__already-aborted', message: 'Transaction already aborted', _errorData: { query } }
-    else if (this.#isCommited) throw { id: 'fln__dgraph__already-commited', message: 'Transaction already commited', _errorData: { query } }
-    else if (this.#isClosed) throw { id: 'fln__dgraph__already-closed', message: 'Transaction already closed', _errorData: { query } }
+  this.query = async function  (closeWhenDone, query) {
+    if (isAborted) throw { id: 'fln__dgraph__already-aborted', message: 'Transaction already aborted', _errorData: { query } }
+    else if (isCommited) throw { id: 'fln__dgraph__already-commited', message: 'Transaction already commited', _errorData: { query } }
+    else if (isClosed) throw { id: 'fln__dgraph__already-closed', message: 'Transaction already closed', _errorData: { query } }
     else {
       const searchParams = new URLSearchParams()
 
-      if (this.#hash) searchParams.set('hash', this.#hash)
-      if (this.#startTs !== 0) searchParams.set('startTs', String(this.#startTs))
-      if (this.#timeout > 0) searchParams.set('timeout', String(this.#timeout) + 's')
-      if (this.#readOnly) searchParams.set('ro', 'true')
-      if (this.#bestEffort) searchParams.set('be', 'true')
+      if (hash) searchParams.set('hash', hash)
+      if (startTs !== 0) searchParams.set('startTs', String(startTs))
+      if (Number(timeout) > 0) searchParams.set('timeout', String(timeout) + 's')
+      if (readOnly) searchParams.set('ro', 'true')
+      if (bestEffort) searchParams.set('be', 'true')
 
       const searchParamsStr = searchParams.toString()
       const path = searchParamsStr ? `query?${ searchParamsStr }` : 'query'
-      const r = await this.#api({ path, body: query, contentType: enumContentType.dql })
+      const r = await api({ path, body: query, contentType: enumContentType.dql, abort: this.abort })
 
-      if (closeWhenDone) this.#isClosed = true
-      else if (r?.extensions?.txn) this.#syncResponseExtensions(r.extensions.txn)
+      if (closeWhenDone) isClosed = true
+      else if (r?.extensions?.txn) syncResponseExtensions(r.extensions.txn)
 
       return r
     } 
@@ -77,32 +64,32 @@ export class DgraphTransaction { // https://dgraph.io/docs/dql/clients/raw-http/
 
 
   /**
-   * Mutate dgraph cloud instance. Only accepts `rdf` triples syntax. If `commitNow` is true we send query param to dgraph cloud instance in this mutation api call that this is the last query or mutation coming from this transation   * @param { import('./typedefs').DgraphMutationOptions } dgraphMutationOptions
-   * @returns { Promise<import('./typedefs').DgraphResponse> }
+   * Mutate dgraph cloud instance. Only accepts `rdf` triples syntax. If `commitNow` is true we send query param to dgraph cloud instance in this mutation api call that this is the last query or mutation coming from this transation   * @param { import('./typedefs.js').DgraphMutationOptions } dgraphMutationOptions
+   * @returns { Promise<import('./typedefs.js').DgraphResponse> }
   */
-  async mutate ({ mutation, remove, commitNow }) {
+  this.mutate = async function ({ mutation, remove, commitNow }) {
     if (!mutation && !remove) throw { id: 'fln__dgraph__empty-mutate', message: 'Mutate function requires a mutation or remove string' }
     else if (mutation && remove) throw { id: 'fln__dgraph__full-mutate', message: 'Mutate function requires only a mutation or a remove string but not both' }
-    else if (this.#isAborted) throw { id: 'fln__dgraph__already-aborted', message: 'Transaction already aborted', _errorData: { mutation, remove, commitNow } }
-    else if (this.#isCommited) throw { id: 'fln__dgraph__already-commited', message: 'Transaction already commited', _errorData: { mutation, remove, commitNow } }
-    else if (this.#isClosed) throw { id: 'fln__dgraph__already-closed', message: 'Transaction already closed', _errorData: { mutation, remove, commitNow } }
-    else if (this.#readOnly) throw { id: 'fln__dgraph__readonly-mutation', message: 'Readonly transactions may not contain mutations', _errorData: { mutation, remove, commitNow } }
+    else if (isAborted) throw { id: 'fln__dgraph__already-aborted', message: 'Transaction already aborted', _errorData: { mutation, remove, commitNow } }
+    else if (isCommited) throw { id: 'fln__dgraph__already-commited', message: 'Transaction already commited', _errorData: { mutation, remove, commitNow } }
+    else if (isClosed) throw { id: 'fln__dgraph__already-closed', message: 'Transaction already closed', _errorData: { mutation, remove, commitNow } }
+    else if (readOnly) throw { id: 'fln__dgraph__readonly-mutation', message: 'Readonly transactions may not contain mutations', _errorData: { mutation, remove, commitNow } }
     else {
-      this.#didMutations = true
+      didMutations = true
 
       const body = mutation ? `{ set { ${ mutation } } }` : `{ delete { ${ remove } } }`
 
       const searchParams = new URLSearchParams()
       if (commitNow) searchParams.set('commitNow', 'true')
-      if (this.#hash) searchParams.set('hash', String(this.#hash))
-      if (this.#startTs) searchParams.set('startTs', String(this.#startTs))
+      if (hash) searchParams.set('hash', String(hash))
+      if (startTs) searchParams.set('startTs', String(startTs))
 
       const searchParamsStr = searchParams.toString()
       const path = searchParamsStr ? `mutate?${ searchParamsStr }` : 'mutate'
-      const r = await this.#api({ path, body, contentType: enumContentType.rdf })
+      const r = await api({ path, body, contentType: enumContentType.rdf, abort: this.abort })
 
-      if (commitNow) this.#isCommited = true
-      else if (r?.extensions?.txn) this.#syncResponseExtensions(r.extensions.txn)
+      if (commitNow) isCommited = true
+      else if (r?.extensions?.txn) syncResponseExtensions(r.extensions.txn)
 
       return r
     }
@@ -111,25 +98,25 @@ export class DgraphTransaction { // https://dgraph.io/docs/dql/clients/raw-http/
 
   /**
    * Commit all mutations that have been done with this transaction. IF transaction has done any mutations => send an api call to dgraph cloud instance to let it know no more incoming actions will be coming from this transaction and to `commit` all that has been done by this transaction. IF transaction has done no mutations => set `this.isCommited` to true so no further queries or mutations may happen with transaction.
-   * @returns { Promise<void | import('./typedefs').DgraphResponse> }
+   * @returns { Promise<void | import('./typedefs.js').DgraphResponse> }
   */  
-  async commit () {
-    if (this.#isAborted) throw { id: 'fln__dgraph__already-aborted', message: 'Transaction already aborted' }
-    else if (this.#isCommited) throw { id: 'fln__dgraph__already-commited', message: 'Transaction already commited' }
-    else if (this.#isClosed) throw { id: 'fln__dgraph__already-closed', message: 'Transaction already closed' }
+  this.commit = async function () {
+    if (isAborted) throw { id: 'fln__dgraph__already-aborted', message: 'Transaction already aborted' }
+    else if (isCommited) throw { id: 'fln__dgraph__already-commited', message: 'Transaction already commited' }
+    else if (isClosed) throw { id: 'fln__dgraph__already-closed', message: 'Transaction already closed' }
     else {
-      this.#isCommited = true
+      isCommited = true
 
-      if (this.#didMutations) { // IF transaction did mutations => api call to "/commit" happens
-        const body = JSON.stringify(this.#keys)
+      if (didMutations) { // IF transaction did mutations => api call to "/commit" happens
+        const body = JSON.stringify(keys)
 
         const searchParams = new URLSearchParams()
-        searchParams.set('startTs', String(this.#startTs))
-        if (this.#hash) searchParams.set('hash', this.#hash)
+        searchParams.set('startTs', String(startTs))
+        if (hash) searchParams.set('hash', hash)
 
         const path = 'commit?' + searchParams.toString()
 
-        return await this.#api({ path, body, contentType: enumContentType.json })
+        return await api({ path, body, contentType: enumContentType.json, abort: this.abort })
       }
     }
   }
@@ -137,21 +124,21 @@ export class DgraphTransaction { // https://dgraph.io/docs/dql/clients/raw-http/
 
   /**
    * Abort all mutations that have been done with this transaction. IF transaction has done any mutations => send an api call to dgraph cloud instance to let it know no more incoming actions will be coming from this transaction and to `rollback` all that has been done by this transaction. IF transaction has done no mutations => set `this.aborted` to true so no further queries or mutations may happen with transaction.
-   * @returns { Promise<void | import('./typedefs').DgraphResponse> }
+   * @returns { Promise<void | import('./typedefs.js').DgraphResponse> }
   */
-  async abort () {
-    if (!this.#isAborted) {
-      this.#isAborted = true
+  this.abort = async function () {
+    if (!isAborted) {
+      isAborted = true
 
-      if (this.#didMutations) { // IF transaction did mutations => api call to "/commit?abort=true" happens
+      if (didMutations) { // IF transaction did mutations => api call to "/commit?abort=true" happens
         const searchParams = new URLSearchParams()
-        searchParams.set('startTs', String(this.#startTs))
+        searchParams.set('startTs', String(startTs))
         searchParams.set('abort', 'true')
-        if (this.#hash) searchParams.set('hash', this.#hash)
+        if (hash) searchParams.set('hash', hash)
 
         const path = 'commit?' + searchParams.toString()
 
-        return await this.#api({ path })
+        return await api({ path, abort: this.abort })
       }
     }
   }
@@ -160,25 +147,22 @@ export class DgraphTransaction { // https://dgraph.io/docs/dql/clients/raw-http/
   /**
    * Fetch dgraph cloud instance
    * @param { object } param
-   * @param { string } param.path
-   * @param { enumContentType } [param.contentType]
-   * @param { string } [param.body]
-   * @returns { Promise<import('./typedefs').DgraphResponse> }
+   * @param { string } param.path - Url piece after the endpoint `/`
+   * @param { enumContentType } [param.contentType] - Optional: The option that will be sent in the header for the key
+   * @param { string } [param.body] - Optional: Fetch request body
+   * @param { () => Promise<void | import('./typedefs.js').DgraphResponse> } param.abort - Dgraph transaction object
+   * @returns { Promise<import('./typedefs.js').DgraphResponse> }
   */  
-  async #api ({ path, contentType, body }) {
-    /**
-     * @type { import('./typedefs').DgraphAPIHeaders }
-     */
-    const headers = { 'X-Auth-Token': this.#apiKey }
+  async function api  ({ path, body, contentType, abort }) {
+    /** @type { import('./typedefs.js').DgraphAPIHeaders } */
+    const headers = { 'X-Auth-Token': apiKey }
     if (contentType) headers['Content-Type'] = contentType
 
-    /**
-     * @type { RequestInit }
-     */
+    /** @type { RequestInit } */
     const requestInit = { method: 'POST', headers }
     if (body) requestInit.body = body
 
-    const url = this.#endpoint +'/'+ path
+    const url = endpoint +'/'+ path
 
     try {
       const rFetch = await fetch(url, requestInit)
@@ -186,7 +170,7 @@ export class DgraphTransaction { // https://dgraph.io/docs/dql/clients/raw-http/
       if (rFetch.status < 200 || rFetch.status >= 300) throw rFetch
       else return await rFetch.json()
     } catch (e) {
-      await this.abort()
+      await abort()
       throw e
     }
   }
@@ -194,17 +178,17 @@ export class DgraphTransaction { // https://dgraph.io/docs/dql/clients/raw-http/
 
   /**
    * Sync extensions from response with their values in this transaction 
-   * @param { import('./typedefs').DgraphExtensionsTxn } extensionsTxn 
-   */
-  #syncResponseExtensions (extensionsTxn) {
+   * @param { import('./typedefs.js').DgraphExtensionsTxn } extensionsTxn 
+  */
+  function syncResponseExtensions (extensionsTxn) {
     if (extensionsTxn) {
-      if (extensionsTxn.hash) this.#hash = extensionsTxn.hash
+      if (extensionsTxn.hash) hash = extensionsTxn.hash
 
-      if (this.#startTs === 0) this.#startTs = extensionsTxn.start_ts 
-      else if (this.#startTs !== extensionsTxn.start_ts) throw { id: 'fln__dgraph__start-ts-mismatch', message: 'The start_ts on the last request does not match the start_ts in the transaction', data: { transactionStartTs: this.#startTs, responseStartTs: extensionsTxn.start_ts } }
+      if (startTs === 0) startTs = extensionsTxn.start_ts 
+      else if (startTs !== extensionsTxn.start_ts) throw { id: 'fln__dgraph__start-ts-mismatch', message: 'The start_ts on the last request does not match the start_ts in the transaction', data: { transactionStartTs: startTs, responseStartTs: extensionsTxn.start_ts } }
 
-      if (extensionsTxn.keys) this.#keys = this.#mergeArrays(this.#keys, extensionsTxn.keys)
-      if (extensionsTxn.preds) this.#preds = this.#mergeArrays(this.#preds, extensionsTxn.preds)
+      if (extensionsTxn.keys) keys = mergeArrays(keys, extensionsTxn.keys)
+      if (extensionsTxn.preds) preds = mergeArrays(preds, extensionsTxn.preds)
     }
   }
 
@@ -214,10 +198,15 @@ export class DgraphTransaction { // https://dgraph.io/docs/dql/clients/raw-http/
    * @param { string[] } array1 - First array
    * @param { string[] } array2 - Second array
    * @returns { string[] }
-   */
-  #mergeArrays(array1, array2) {
-    const concat = array1.concat(array2) // concat arrays
-    const set = new Set(concat) // remove duplicates
-    return Array.from(set) // convert set to an array
+  */
+  function mergeArrays(array1, array2) {
+    if (!array1 && !array2) return []
+    else if (array1 && !array2) return array1
+    else if (!array1 && array2) return array2
+    else {
+      const concat = array1.concat(array2) // concat arrays
+      const set = new Set(concat) // remove duplicates
+      return Array.from(set) // convert set to an array
+    }
   }
 }

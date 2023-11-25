@@ -2,6 +2,16 @@ import { enumContentType } from './enumContentType.js'
 
 
 /**
+ * @typedef { object } DgraphTransactionConstructor
+ * @property { string } apiKey Found @ Dgraph Cloud > Settings > Api Keys
+ * @property { string } endpoint Found @ Dgraph Cloud > GraphQL Endpoint. **IMPORTANT: remove /graphql from endpoint before sending to this constructor**
+ * @property { boolean= } readOnly Optional: Read only transactions are useful to increase read speed because they can circumvent the usual consensus protocol. Read-only transactions cannot contain mutations.
+ * @property { boolean= } bestEffort Optional: Asks Dgraph Alpha to try to get timestamps from memory on a best-effort basis to reduce the number of outbound requests to Zero. This may yield improved latencies in read-bound workloads where linearizable reads are not strictly needed.
+ * @property { number } [timeout=600] DEFAULT is 600: Max seconds any query of this transaction will be allowed to be attempted
+ */
+
+
+/**
  * @typedef { Object } DgraphAPIHeaders
  * @prop { string } X-Auth-Token - For Dgraph Cloud’s API key authentication (where you pass in any API key you would generate from the “API Keys” tab on the Settings page). The API key passed can be one of two kinds: Admin API key or Client API key. 
  * @prop { enumContentType= } Content-Type - application/rdf for .mutate(), application/dql for .query() and application/json for .commit(), 

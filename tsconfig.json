@@ -1,8 +1,13 @@
 { // https://www.typescriptlang.org/tsconfig
-  "include": ["src/**/*", "tsc/**/*"],
-  "exclude": ["src/index.ts"],
+  "files": [
+    "./src/DgraphTransaction.js",
+    "./src/enumContentType.js",
+    "./src/index.js",
+    "./src/typedefs.js",
+  ],
   "compilerOptions": {
     "allowJs": true, // Tells TypeScript to read JS files, as normally they are ignored as source files
+    "checkJs": true, // Enable errors in JavaScript files
     "esModuleInterop": true, // https://www.typescriptlang.org/tsconfig#esModuleInterop
     "forceConsistentCasingInFileNames": true, // TypeScript will issue an error if a program tries to include a file by a casing different from the casing on disk.
     "sourceMap": true, // Enables the generation of sourcemap files. These files allow debuggers and other tools to display the original TypeScript source code when actually working with the emitted JavaScript files.

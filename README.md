@@ -179,10 +179,11 @@ export default function txnOptions (pointMain?: boolean): { endpoint: string, ap
 * IF transaction has done no mutations => set `this.aborted` to true so no further queries or mutations may happen with transaction
 
 
-## 🙌 Commit
+## 🚀 Commit
 * `transaction.commit(): Promise<DgraphResponse | void>`
 * IF transaction has done any mutations => send an api call to dgraph cloud instance to let it know no more incoming actions will be coming from this transaction and to `commit` all that has been done by this transaction
 * IF transaction has done no mutations => set `this.isCommited` to true so no further queries or mutations may happen with transaction
+
 
 ## 🔥 Errors we may throw
 * `this.query()` |  `this.mutate()` |  `this.abort()` |  `this.commit()`
