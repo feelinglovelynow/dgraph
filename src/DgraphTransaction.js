@@ -37,7 +37,7 @@ export class DgraphTransaction {
 
 
   /**
-   * Query dgraph cloud instance. Only accepts DQL syntax. IF closeWhenDone is set to true the transaction will not be allowed to be used again (does not send a request to dgraph cloud instance, just sets this.isClosed to true)
+   * Query dgraph cloud instance
    * @param { boolean } closeWhenDone - IF closeWhenDone is set to true the transaction will not be allowed to be used again (does not send a request to dgraph cloud instance, just sets this.isClosed to true)
    * @param { string } query - Only accepts DQL syntax.
    * @returns { Promise<import('./typedefs.js').DgraphResponse> }
@@ -68,7 +68,8 @@ export class DgraphTransaction {
 
 
   /**
-   * Mutate dgraph cloud instance. Only accepts `rdf` triples syntax. If `commitNow` is true we send query param to dgraph cloud instance in this mutation api call that this is the last query or mutation coming from this transation   * @param { import('./typedefs.js').DgraphMutationOptions } dgraphMutationOptions
+   * Mutate dgraph cloud instance. Only accepts `rdf` triples syntax. If `commitNow` is true we send query param to dgraph cloud instance in this mutation api call that this is the last query or mutation coming from this transation
+   * @param { import('./typedefs.js').DgraphMutationOptions } dgraphMutationOptions
    * @returns { Promise<import('./typedefs.js').DgraphResponse> }
   */
   async mutate ({ mutation, remove, commitNow }) {
