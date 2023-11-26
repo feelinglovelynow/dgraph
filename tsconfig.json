@@ -1,6 +1,6 @@
 { // https://www.typescriptlang.org/tsconfig
   "files": [
-    "./src/DgraphTransaction.js",
+    "src/DgraphTransaction.js",
     "./src/enumContentType.js",
     "./src/index.js",
     "./src/typedefs.js",
@@ -15,7 +15,7 @@
     "strict": true, // The strict flag enables a wide range of type checking behavior that results in stronger guarantees of program correctness.
     "outDir": "tsc", // Types should go into this directory. Removing this would place the .d.ts files next to the .js files
     "declarationMap": true, // go to js file when using IDE functions like "Go to Definition" in VSCode
-    "module": "ES2015", // Sets the module system for the program.
+    "module": "ESNext", // Sets the module system for the program.
     "target": "ES2015",  // The target setting changes which JS features are downleveled and which are left intact.
   }
 }

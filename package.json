@@ -1,6 +1,6 @@
 {
   "name": "@feelinglovelynow/dgraph",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "license": "MIT",
   "type": "module",
   "types": "./dist/index.ts",
@@ -22,11 +22,7 @@
     "react"
   ],
   "scripts": {
-    "clear": "rm -rf ./dist ./tsc",
-    "createTypes": "pnpm tsc",
-    "minify": "chmod +x build.cjs && ./build.cjs",
-    "copy": "cp ./src/index.ts ./dist/index.ts",
-    "build": "pnpm clear && pnpm createTypes && pnpm minify && pnpm copy"
+    "build": "bash ./build.sh"
   },
   "devDependencies": {
     "esbuild": "^0.19.7",
