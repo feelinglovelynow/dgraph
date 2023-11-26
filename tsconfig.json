@@ -1,6 +1,6 @@
 { // https://www.typescriptlang.org/tsconfig
   "files": [
-    "src/DgraphTransaction.js",
+    "./src/DgraphTransaction.js",
     "./src/enumContentType.js",
     "./src/index.js",
     "./src/typedefs.js",
