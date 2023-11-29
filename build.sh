@@ -1,5 +1,5 @@
 #!/bin/bash
 rm -rf ./dist ./tsc &&
-pnpm tsc -p tsconfig.build.json &&
+pnpm tsc &&
 node ./esbuild.js &&
 cp ./src/index.ts ./dist/index.ts
