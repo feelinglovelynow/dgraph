@@ -189,7 +189,7 @@ export class DgraphTransaction {
       if (extensionsTxn.hash) this.#hash = extensionsTxn.hash
 
       if (this.#startTs === 0) this.#startTs = extensionsTxn.start_ts 
-      else if (this.#startTs !== extensionsTxn.start_ts) throw { id: 'fln__dgraph__start-ts-mismatch', message: 'The start_ts on the last request does not match the start_ts in the transaction', data: { transactionStartTs: this.#startTs, responseStartTs: extensionsTxn.start_ts } }
+      else if (this.#startTs !== extensionsTxn.start_ts) throw { id: 'fln__dgraph__start-ts-mismatch', message: 'The start_ts on the last request does not match the start_ts in the transaction', _errorData: { transactionStartTs: this.#startTs, responseStartTs: extensionsTxn.start_ts } }
 
       if (extensionsTxn.keys) this.#keys = this.#mergeArrays(this.#keys, extensionsTxn.keys)
       if (extensionsTxn.preds) this.#preds = this.#mergeArrays(this.#preds, extensionsTxn.preds)
