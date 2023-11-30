@@ -18,18 +18,18 @@ pnpm add @feelinglovelynow/dgraph
 ```ts
 constructor ({ apiKey, endpoint, readOnly, bestEffort, timeout })
 ```
-* **REQUIRED**: `apiKey { string }`: Found @ Dgraph Cloud > Settings > Api Keys
-* **REQUIRED**: `endpoint { string }`: Found @ Dgraph Cloud > GraphQL Endpoint. **Remove /graphql from endpoint b4 sending to this constructor**
-* **Default is false**: `readOnly { boolean }`: Read only transactions are useful to increase read speed because they can circumvent the usual consensus protocol. Read-only transactions cannot contain mutations.
-* **Default is false**: `bestEffort { boolean }`: The `bestEffort` flag asks Dgraph Alpha to try to get timestamps from memory on a best-effort basis to reduce the number of outbound requests to Zero. This may yield improved latencies in read-bound workloads where linearizable reads are not strictly needed.
-* **Default is 600**: `timeout { number }:` Max seconds any query of this transaction will be allowed to be attempted
+* `apiKey { string }`: **Required**: Found @ Dgraph Cloud > Settings > Api Keys
+* `endpoint { string }`: **Required**: Found @ Dgraph Cloud > GraphQL Endpoint. **Remove /graphql from endpoint b4 sending to this constructor**
+* `readOnly { boolean }`:**Default is false**: Read only transactions are useful to increase read speed because they can circumvent the usual consensus protocol. Read-only transactions cannot contain mutations.
+* `bestEffort { boolean }`: **Default is false**: The `bestEffort` flag asks Dgraph Alpha to try to get timestamps from memory on a best-effort basis to reduce the number of outbound requests to Zero. This may yield improved latencies in read-bound workloads where linearizable reads are not strictly needed.
+* `timeout { number }:` **Default is 600**: Max seconds any query of this transaction will be allowed to be attempted
 
 
 ## 💛 Mutations
 * `transaction.mutate({ mutation, remove, commitNow }: DgraphMutationOptions): Promise<DgraphResponse>`
 * Mutate dgraph cloud instance.
 * Only accepts `rdf` triples syntax
-* If `commitNow` is true we send query param to dgraph cloud instance in this mutation api call that that tells your instance to commit this mutation and that this is the last query or mutation that will come from this transation
+* If `commitNow` is true we send query param to dgraph cloud instance in this mutation api call that tells your instance to commit this mutation and that this is the last query or mutation that will come from this transation
 ```ts
 const t1 = new DgraphTransaction({ ...txnOptions() })
 
