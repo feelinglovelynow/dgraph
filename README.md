@@ -20,7 +20,7 @@ constructor ({ apiKey, endpoint, readOnly, bestEffort, timeout })
 ```
 * `apiKey { string }`: **Required**: Found @ Dgraph Cloud > Settings > Api Keys
 * `endpoint { string }`: **Required**: Found @ Dgraph Cloud > GraphQL Endpoint. **Remove /graphql from endpoint b4 sending to this constructor**
-* `readOnly { boolean }`:**Default is false**: Read only transactions are useful to increase read speed because they can circumvent the usual consensus protocol. Read-only transactions cannot contain mutations.
+* `readOnly { boolean }`: **Default is false**: Read only transactions are useful to increase read speed because they can circumvent the usual consensus protocol. Read-only transactions cannot contain mutations.
 * `bestEffort { boolean }`: **Default is false**: The `bestEffort` flag asks Dgraph Alpha to try to get timestamps from memory on a best-effort basis to reduce the number of outbound requests to Zero. This may yield improved latencies in read-bound workloads where linearizable reads are not strictly needed.
 * `timeout { number }:` **Default is 600**: Max seconds any query of this transaction will be allowed to be attempted
 
@@ -57,7 +57,7 @@ await t2.commit() // commit t2
 * `transaction.query(closeWhenDone: boolean, query: string): Promise<DgraphResponse>`
 * Query dgraph cloud instance
 * Only accepts `DQL` syntax
-* IF `closeWhenDone` is set to true the transaction will not be allowed to be used again (does not send a request to dgraph cloud instance, just sets `this.isClosed` to true)
+* IF `closeWhenDone` is true the transaction will not be allowed to be used again (does not send a request to dgraph cloud instance, just sets `this.#isClosed` to true)
 ```ts
 async function getProducts (): Promise<Product[]> {
   const transaction = new DgraphTransaction({ ...txnOptions(), readOnly: true, bestEffort: true })
@@ -176,13 +176,13 @@ export default function txnOptions (pointMain?: boolean): { endpoint: string, ap
 ## ✨ Abort
 * `transaction.abort(): Promise<DgraphResponse | void>`
 * IF transaction has done any mutations => send an api call to dgraph cloud instance to let it know no more incoming actions will be coming from this transaction and to `rollback` all that has been done by this transaction
-* IF transaction has done no mutations => set `this.aborted` to true so no further queries or mutations may happen with transaction
+* IF transaction has done no mutations => set `this.#isAborted` to true so no further queries or mutations may happen with transaction
 
 
 ## 🚀 Commit
 * `transaction.commit(): Promise<DgraphResponse | void>`
 * IF transaction has done any mutations => send an api call to dgraph cloud instance to let it know no more incoming actions will be coming from this transaction and to `commit` all that has been done by this transaction
-* IF transaction has done no mutations => set `this.isCommited` to true so no further queries or mutations may happen with transaction
+* IF transaction has done no mutations => set `this.#isCommited` to true so no further queries or mutations may happen with transaction
 
 
 ## 🔥 Errors we may throw
