@@ -97,6 +97,10 @@ export default function txnOptions (pointMain?: boolean): { endpoint: string, ap
 
 
 ## 💟 TYPE: DgraphResponse
+* `transaction.query(closeWhenDone: boolean, query: string): Promise<DgraphResponse>`
+* `transaction.mutate({ mutation, remove, commitNow }: DgraphMutationOptions): Promise<DgraphResponse>`
+* `transaction.commit(): Promise<DgraphResponse | void>`
+* `transaction.abort(): Promise<DgraphResponse | void>`
 ```ts
 /** @typedef { DgraphQueryResponse | DgraphMutationResponse | DgraphCommitResponse | DgraphAbortResponse | DgraphErrorResponse } DgraphResponse */
 
@@ -158,7 +162,8 @@ export default function txnOptions (pointMain?: boolean): { endpoint: string, ap
 */
 ```
 
-## 🌟 TYPE: DgraphMutationOptions
+## 💖 TYPE: DgraphMutationOptions
+* `transaction.mutate({ mutation, remove, commitNow }: DgraphMutationOptions): Promise<DgraphResponse>`
 ```ts
 /** @typedef { DgraphMutation | DgraphRemove } DgraphMutationOptions */
 
@@ -175,6 +180,20 @@ export default function txnOptions (pointMain?: boolean): { endpoint: string, ap
  * @prop { never= } mutation
  * @prop { string } remove - Only accepts `rdf` triples syntax
 */
+```
+
+## 🌟 TYPE: DgraphExtensionsTxn
+* In the `Response` from dgraph cloud instance `{ data: any, extensions: { txn: DgraphExtensionsTxn }  }`
+```ts
+/**
+ * @typedef { Object } DgraphExtensionsTxn
+ * @prop { number } start_ts - Start timestamp that uniquely identifies a transaction and doesn’t change over the transaction lifecycle
+ * @prop { string } hash - Transaction start id like start_ts
+ * @prop { string[] } keys - The set of keys modified by the transaction. Aids in transaction conflict detection. Every mutation sends back a new set of keys. `this.#mergeArrays` merges the response keys with the existing keys.
+ * @prop { string[] } preds - The set of predicates modified by the transaction. Aids in predicate move detection. Every mutation sends back a new set of preds. `this.#mergeArrays` merges the response preds with the existing preds.
+ * @prop { boolean } readOnly - Is this a readOnly transaction
+ * @prop { boolean= } aborted - Has this transaction been aborted
+ */
 ```
 
 ## ✨ Abort
