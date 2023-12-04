@@ -7,6 +7,10 @@ pnpm add @feelinglovelynow/dgraph
 ```
 
 
+## 🤓 Unit Tests
+![Statements](https://img.shields.io/badge/Coverage-100%25-brightgreen.svg?style=flat)
+
+
 ## 🙏 Description
 * B/c the npm package [dgraph-js-http](https://www.npmjs.com/package/dgraph-js-http?activeTab=dependencies) has a dependency on `jsonwebtoken` it does not work on the edge
 *  `@feelinglovelynow/dgraph` has 0 dependencies and works on the edge
@@ -201,28 +205,37 @@ try {
 ```
 * `constructor()`
 ```ts
+if (!params || typeof params !== 'object') throw { id: 'fln__dgraph__missing-params', message: 'Transaction constructor needs a params object', _errorData: { params } }
+
+const { apiKey, endpoint } = params
+
 if (!apiKey) throw { id: 'fln__dgraph__missing-apiKey', message: 'Transaction constructor needs an apiKey', _errorData: { apiKey } }
 if (!endpoint) throw { id: 'fln__dgraph__missing-endpoint', message: 'Transaction constructor needs an endpoint', _errorData: { endpoint } }
 ```
 * `this.query()`
 ```ts
-if (this.isAborted) throw { id: 'fln__dgraph__already-aborted', message: 'Transaction already aborted', _errorData: { query } }
-else if (this.isCommited) throw { id: 'fln__dgraph__already-commited', message: 'Transaction already commited', _errorData: { query } }
-else if (this.isClosed) throw { id: 'fln__dgraph__already-closed', message: 'Transaction already closed', _errorData: { query } }
+if (this.#isAborted) throw { id: 'fln__dgraph__already-aborted', message: 'Transaction already aborted', _errorData: { query } }
+if (this.#isCommited) throw { id: 'fln__dgraph__already-commited', message: 'Transaction already commited', _errorData: { query } }
+if (this.#isClosed) throw { id: 'fln__dgraph__already-closed', message: 'Transaction already closed', _errorData: { query } }
 ```
 * `this.mutate()`
 ```ts
-if (!mutation && !remove) throw { id: 'fln__dgraph__empty-mutate', message: 'Mutate function requires a mutation or remove string' }
-else if (this.isAborted) throw { id: 'fln__dgraph__already-aborted', message: 'Transaction already aborted', _errorData: { mutation, remove, commitNow } }
-else if (this.isCommited) throw { id: 'fln__dgraph__already-commited', message: 'Transaction already commited', _errorData: { mutation, remove, commitNow } }
-else if (this.isClosed) throw { id: 'fln__dgraph__already-closed', message: 'Transaction already closed', _errorData: { mutation, remove, commitNow } }
-else if (this.readOnly) throw { id: 'fln__dgraph__readonly-mutation', message: 'Readonly transactions may not contain mutations', _errorData: { mutation, remove, commitNow } }
+if (!params || typeof params !== 'object') throw { id: 'fln__dgraph__missing-params', message: 'Mutate function needs a params object', _errorData: { params } }
+
+const { mutation, remove, commitNow } = params
+
+if (!mutation && !remove) throw { id: 'fln__dgraph__empty-mutate', message: 'Mutate function requires a mutation or remove string', _errorData: { mutation, remove } }
+if (mutation && remove) throw { id: 'fln__dgraph__full-mutate', message: 'Mutate function requires only a mutation or a remove string but not both' }
+if (this.#isAborted) throw { id: 'fln__dgraph__already-aborted', message: 'Transaction already aborted', _errorData: { mutation, remove, commitNow } }
+if (this.#isCommited) throw { id: 'fln__dgraph__already-commited', message: 'Transaction already commited', _errorData: { mutation, remove, commitNow } }
+if (this.#isClosed) throw { id: 'fln__dgraph__already-closed', message: 'Transaction already closed', _errorData: { mutation, remove, commitNow } }
+if (this.#readOnly) throw { id: 'fln__dgraph__readonly-mutation', message: 'Readonly transactions may not contain mutations', _errorData: { mutation, remove, commitNow } }
 ```
 * `this.commit()`
 ```ts
-if (this.isAborted) throw { id: 'fln__dgraph__already-aborted', message: 'Transaction already aborted' }
-else if (this.isCommited) throw { id: 'fln__dgraph__already-commited', message: 'Transaction already commited' }
-else if (this.isClosed) throw { id: 'fln__dgraph__already-closed', message: 'Transaction already closed' }
+if (this.#isAborted) throw { id: 'fln__dgraph__already-aborted', message: 'Transaction already aborted' }
+if (this.#isCommited) throw { id: 'fln__dgraph__already-commited', message: 'Transaction already commited' }
+if (this.#isClosed) throw { id: 'fln__dgraph__already-closed', message: 'Transaction already closed' }
 ```
 
 

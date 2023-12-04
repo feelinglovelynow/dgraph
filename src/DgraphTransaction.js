@@ -22,10 +22,11 @@ export class DgraphTransaction {
   /**
    * Creates a transaction object with lots of features to ease workflow with [dgraph cloud instances](https://dgraph.io/product). Guidance came from [here](https://dgraph.io/docs/dql/clients/raw-http/).
    * @param { import('./typedefs.js').DgraphTransactionConstructor } params
-   */
-  constructor({ apiKey, endpoint, readOnly, bestEffort, timeout }) {
-    if (!apiKey) throw { id: 'fln__dgraph__missing-apiKey', message: 'Transaction constructor needs an apiKey', _errorData: { apiKey } }
-    if (!endpoint) throw { id: 'fln__dgraph__missing-endpoint', message: 'Transaction constructor needs an endpoint', _errorData: { endpoint } }
+  */
+  constructor (params) {
+    this.#validateConstructor(params)
+
+    const { apiKey, endpoint, readOnly, bestEffort, timeout } = params
 
     this.#apiKey = apiKey
     this.#endpoint = endpoint
@@ -37,67 +38,104 @@ export class DgraphTransaction {
 
 
   /**
+   * Throw an error if there is an issue in th constructor
+   * @param { import('./typedefs.js').DgraphTransactionConstructor } params
+   * @returns { void }
+  */
+  #validateConstructor (params) {
+    if (!params || typeof params !== 'object') throw { id: 'fln__dgraph__missing-params', message: 'Transaction constructor needs a params object', _errorData: { params } }
+
+    const { apiKey, endpoint } = params
+
+    if (!apiKey) throw { id: 'fln__dgraph__missing-apiKey', message: 'Transaction constructor needs an apiKey', _errorData: { apiKey } }
+    if (!endpoint) throw { id: 'fln__dgraph__missing-endpoint', message: 'Transaction constructor needs an endpoint', _errorData: { endpoint } }
+  }
+
+
+  /**
    * Query dgraph cloud instance
    * @param { boolean } closeWhenDone - IF closeWhenDone is set to true the transaction will not be allowed to be used again (does not send a request to dgraph cloud instance, just sets this.isClosed to true)
    * @param { string } query - Only accepts DQL syntax.
    * @returns { Promise<import('./typedefs.js').DgraphResponse> }
   */
-  async query  (closeWhenDone, query) {
+  async query (closeWhenDone, query) {
+    this.#validateQuery(query)
+
+    const searchParams = new URLSearchParams()
+
+    if (this.#startTs) searchParams.set('startTs', String(this.#startTs))
+    if (this.#hash) searchParams.set('hash', this.#hash)
+    if (this.#timeout > 0) searchParams.set('timeout', String(this.#timeout) + 's')
+    if (this.#readOnly) searchParams.set('ro', 'true')
+    if (this.#bestEffort) searchParams.set('be', 'true')
+
+    const searchParamsStr = searchParams.toString()
+    const path = `query?${ searchParamsStr }`
+    const r = await this.#api({ path, body: query, contentType: enumContentType.dql })
+
+    if (closeWhenDone) this.#isClosed = true
+    else if (r?.extensions?.txn) this.#syncResponseExtensions(r.extensions.txn)
+
+    return r
+  }
+
+
+  /**
+   * Throw an error if there is an issue with this query
+   * @param { string } query
+   * @returns { void }
+  */
+  #validateQuery (query) {
     if (this.#isAborted) throw { id: 'fln__dgraph__already-aborted', message: 'Transaction already aborted', _errorData: { query } }
-    else if (this.#isCommited) throw { id: 'fln__dgraph__already-commited', message: 'Transaction already commited', _errorData: { query } }
-    else if (this.#isClosed) throw { id: 'fln__dgraph__already-closed', message: 'Transaction already closed', _errorData: { query } }
-    else {
-      const searchParams = new URLSearchParams()
-
-      if (this.#hash) searchParams.set('hash', this.#hash)
-      if (this.#startTs !== 0) searchParams.set('startTs', String(this.#startTs))
-      if (this.#timeout > 0) searchParams.set('timeout', String(this.#timeout) + 's')
-      if (this.#readOnly) searchParams.set('ro', 'true')
-      if (this.#bestEffort) searchParams.set('be', 'true')
-
-      const searchParamsStr = searchParams.toString()
-      const path = searchParamsStr ? `query?${ searchParamsStr }` : 'query'
-      const r = await this.#api({ path, body: query, contentType: enumContentType.dql })
-
-      if (closeWhenDone) this.#isClosed = true
-      else if (r?.extensions?.txn) this.#syncResponseExtensions(r.extensions.txn)
-
-      return r
-    } 
+    if (this.#isCommited) throw { id: 'fln__dgraph__already-commited', message: 'Transaction already commited', _errorData: { query } }
+    if (this.#isClosed) throw { id: 'fln__dgraph__already-closed', message: 'Transaction already closed', _errorData: { query } }
   }
 
 
   /**
    * Mutate dgraph cloud instance. Only accepts `rdf` triples syntax. If `commitNow` is true we send query param to dgraph cloud instance in this mutation api call that this is the last query or mutation coming from this transation
-   * @param { import('./typedefs.js').DgraphMutationOptions } dgraphMutationOptions
+   * @param { import('./typedefs.js').DgraphMutationOptions } params
    * @returns { Promise<import('./typedefs.js').DgraphResponse> }
   */
-  async mutate ({ mutation, remove, commitNow }) {
-    if (!mutation && !remove) throw { id: 'fln__dgraph__empty-mutate', message: 'Mutate function requires a mutation or remove string' }
-    else if (mutation && remove) throw { id: 'fln__dgraph__full-mutate', message: 'Mutate function requires only a mutation or a remove string but not both' }
-    else if (this.#isAborted) throw { id: 'fln__dgraph__already-aborted', message: 'Transaction already aborted', _errorData: { mutation, remove, commitNow } }
-    else if (this.#isCommited) throw { id: 'fln__dgraph__already-commited', message: 'Transaction already commited', _errorData: { mutation, remove, commitNow } }
-    else if (this.#isClosed) throw { id: 'fln__dgraph__already-closed', message: 'Transaction already closed', _errorData: { mutation, remove, commitNow } }
-    else if (this.#readOnly) throw { id: 'fln__dgraph__readonly-mutation', message: 'Readonly transactions may not contain mutations', _errorData: { mutation, remove, commitNow } }
-    else {
-      this.#didMutations = true
+  async mutate (params) {
+    this.#validateMutate(params)
+    this.#didMutations = true
 
-      const body = mutation ? `{ set { ${ mutation } } }` : `{ delete { ${ remove } } }`
+    const { mutation, remove, commitNow } = params
+    const body = mutation ? `{ set { ${ mutation } } }` : `{ delete { ${ remove } } }`
+    const searchParams = new URLSearchParams()
 
-      const searchParams = new URLSearchParams()
-      if (commitNow) searchParams.set('commitNow', 'true')
-      if (this.#hash) searchParams.set('hash', this.#hash)
-      if (this.#startTs) searchParams.set('startTs', String(this.#startTs))
+    if (commitNow) searchParams.set('commitNow', 'true')
+    if (this.#startTs) searchParams.set('startTs', String(this.#startTs))
+    if (this.#hash) searchParams.set('hash', this.#hash)
 
-      const searchParamsStr = searchParams.toString()
-      const path = searchParamsStr ? `mutate?${ searchParamsStr }` : 'mutate'
-      const r = await this.#api({ path, body, contentType: enumContentType.rdf })
+    const searchParamsStr = searchParams.toString()
+    const path = searchParamsStr ? `mutate?${searchParamsStr}` : 'mutate'
+    const r = await this.#api({ path, body, contentType: enumContentType.rdf })
 
-      if (commitNow) this.#isCommited = true
-      else if (r?.extensions?.txn) this.#syncResponseExtensions(r.extensions.txn)
+    if (commitNow) this.#isCommited = true
+    else if (r?.extensions?.txn) this.#syncResponseExtensions(r.extensions.txn)
 
-      return r
-    }
+    return r
+  }
+
+
+  /**
+   * Throw an error if there is an issue with this mutation
+   * @param { import('./typedefs.js').DgraphMutationOptions } params
+   * @returns { void }
+  */
+  #validateMutate (params) {
+    if (!params || typeof params !== 'object') throw { id: 'fln__dgraph__missing-params', message: 'Mutate function needs a params object', _errorData: { params } }
+
+    const { mutation, remove, commitNow } = params
+
+    if (!mutation && !remove) throw { id: 'fln__dgraph__empty-mutate', message: 'Mutate function requires a mutation or remove string', _errorData: { mutation, remove } }
+    if (mutation && remove) throw { id: 'fln__dgraph__full-mutate', message: 'Mutate function requires only a mutation or a remove string but not both' }
+    if (this.#isAborted) throw { id: 'fln__dgraph__already-aborted', message: 'Transaction already aborted', _errorData: { mutation, remove, commitNow } }
+    if (this.#isCommited) throw { id: 'fln__dgraph__already-commited', message: 'Transaction already commited', _errorData: { mutation, remove, commitNow } }
+    if (this.#isClosed) throw { id: 'fln__dgraph__already-closed', message: 'Transaction already closed', _errorData: { mutation, remove, commitNow } }
+    if (this.#readOnly) throw { id: 'fln__dgraph__readonly-mutation', message: 'Readonly transactions may not contain mutations', _errorData: { mutation, remove, commitNow } }
   }
 
 
@@ -106,24 +144,33 @@ export class DgraphTransaction {
    * @returns { Promise<void | import('./typedefs.js').DgraphResponse> }
   */  
   async commit () {
-    if (this.#isAborted) throw { id: 'fln__dgraph__already-aborted', message: 'Transaction already aborted' }
-    else if (this.#isCommited) throw { id: 'fln__dgraph__already-commited', message: 'Transaction already commited' }
-    else if (this.#isClosed) throw { id: 'fln__dgraph__already-closed', message: 'Transaction already closed' }
-    else {
-      this.#isCommited = true
+    this.#validateCommit()
+    this.#isCommited = true
 
-      if (this.#didMutations) { // IF transaction did mutations => api call to "/commit" happens
-        const body = JSON.stringify(this.#keys)
+    if (this.#didMutations) { // IF transaction did mutations => api call to "/commit" happens
+      const body = JSON.stringify({
+        keys: this.#keys,
+        preds: this.#preds,
+      })
 
-        const searchParams = new URLSearchParams()
-        searchParams.set('startTs', String(this.#startTs))
-        if (this.#hash) searchParams.set('hash', this.#hash)
+      const searchParams = new URLSearchParams()
+      searchParams.set('startTs', String(this.#startTs))
+      searchParams.set('hash', this.#hash)
 
-        const path = 'commit?' + searchParams.toString()
-
-        return await this.#api({ path, body, contentType: enumContentType.json })
-      }
+      const path = 'commit?' + searchParams.toString()
+      return await this.#api({ path, body, contentType: enumContentType.json })
     }
+  }
+
+
+  /**
+   * Throw an error if there is an issue with this commit
+   * @returns { void }
+  */
+  #validateCommit () {
+    if (this.#isAborted) throw { id: 'fln__dgraph__already-aborted', message: 'Transaction already aborted' }
+    if (this.#isCommited) throw { id: 'fln__dgraph__already-commited', message: 'Transaction already commited' }
+    if (this.#isClosed) throw { id: 'fln__dgraph__already-closed', message: 'Transaction already closed' }
   }
 
 
@@ -138,9 +185,8 @@ export class DgraphTransaction {
       if (this.#didMutations) { // IF transaction did mutations => api call to "/commit?abort=true" happens
         const searchParams = new URLSearchParams()
         searchParams.set('startTs', String(this.#startTs))
+        searchParams.set('hash', this.#hash)
         searchParams.set('abort', 'true')
-        if (this.#hash) searchParams.set('hash', this.#hash)
-
         const path = 'commit?' + searchParams.toString()
 
         return await this.#api({ path })
@@ -203,7 +249,7 @@ export class DgraphTransaction {
    * @param { string[] } array2 - Second array
    * @returns { string[] }
   */
-  #mergeArrays(array1, array2) {
+  #mergeArrays (array1, array2) {
     if (!array1 && !array2) return []
     else if (array1 && !array2) return array1
     else if (!array1 && array2) return array2

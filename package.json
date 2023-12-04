@@ -1,6 +1,6 @@
 {
   "name": "@feelinglovelynow/dgraph",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "license": "MIT",
   "type": "module",
   "types": "./dist/index.ts",
@@ -24,10 +24,12 @@
   "scripts": {
     "watch": "pnpm tsc -w",
     "build": "bash ./build.sh",
-    "cloud": "pnpm build && pnpm publish --access public ."
+    "cloud": "pnpm build && pnpm publish --access public .",
+    "test": "NODE_OPTIONS=--experimental-vm-modules pnpm jest"
   },
   "devDependencies": {
     "esbuild": "^0.19.7",
+    "jest": "^29.7.0",
     "typescript": "^5.3.2"
   },
   "repository": {
