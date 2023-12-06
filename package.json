@@ -1,6 +1,6 @@
 {
   "name": "@feelinglovelynow/dgraph",
-  "version": "1.2.2",
+  "version": "1.2.3",
   "license": "MIT",
   "type": "module",
   "types": "./dist/index.ts",
@@ -28,6 +28,7 @@
     "test": "NODE_OPTIONS=--experimental-vm-modules pnpm jest"
   },
   "devDependencies": {
+    "@jest/globals": "^29.7.0",
     "esbuild": "^0.19.7",
     "jest": "^29.7.0",
     "typescript": "^5.3.2"

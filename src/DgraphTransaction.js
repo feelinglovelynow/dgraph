@@ -217,7 +217,7 @@ export class DgraphTransaction {
     try {
       const rFetch = await fetch(url, requestInit)
 
-      if (rFetch.status < 200 || rFetch.status >= 300) throw rFetch
+      if (rFetch.status >= 300) throw rFetch
       else return await rFetch.json()
     } catch (e) {
       await this.abort()
@@ -250,13 +250,8 @@ export class DgraphTransaction {
    * @returns { string[] }
   */
   #mergeArrays (array1, array2) {
-    if (!array1 && !array2) return []
-    else if (array1 && !array2) return array1
-    else if (!array1 && array2) return array2
-    else {
-      const concat = array1.concat(array2) // concat arrays
-      const set = new Set(concat) // remove duplicates
-      return Array.from(set) // convert set to an array
-    }
+    const united = array1.concat(array2) // concat arrays
+    const unique = new Set(united) // remove duplicates
+    return Array.from(unique) // convert set to an array
   }
 }

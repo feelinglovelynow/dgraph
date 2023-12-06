@@ -215,7 +215,7 @@ export default function txnOptions (pointMain?: boolean): { endpoint: string, ap
 try {
   const rFetch = await fetch(url, requestInit)
 
-  if (rFetch.status < 200 || rFetch.status >= 300) throw rFetch
+  if (rFetch.status >= 300) throw rFetch
   else return await rFetch.json()
 } catch (e) {
   await this.abort()

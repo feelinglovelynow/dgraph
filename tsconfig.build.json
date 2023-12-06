@@ -1,20 +1,21 @@
 {
   "files": [
     "./src/DgraphTransaction.js",
-    "./src/DgraphTransaction.test.js",
     "./src/enumContentType.js",
-    "./src/enumContentType.test.js",
     "./src/index.js",
     "./src/typedefs.js",
   ],
   "compilerOptions": {
-    "noEmit": true,
     "allowJs": true,
     "checkJs": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true,
+    "sourceMap": true,
+    "declaration": true,
     "strict": true,
+    "outDir": "tsc",
+    "declarationMap": true,
     "module": "NodeNext",
     "target": "ES2017"
   }
