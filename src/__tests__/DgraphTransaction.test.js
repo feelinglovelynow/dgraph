@@ -1,5 +1,5 @@
-import { enumContentType } from './enumContentType.js'
-import { DgraphTransaction } from './DgraphTransaction.js'
+import { enumContentType } from '../enumContentType.js'
+import { DgraphTransaction } from '../DgraphTransaction.js'
 import { describe, test, expect, jest, beforeEach, afterEach } from '@jest/globals'
 
 
@@ -181,7 +181,7 @@ describe('DgraphTransaction', () => {
         try { await transaction.query(false, query) }
         catch (e) { error = e }
 
-        expect(error).toEqual({ id: 'fln__dgraph__start-ts-mismatch', message: 'The start_ts on the last request does not match the start_ts in the transaction', _errorData: { transactionStartTs: startTs, responseStartTs: mismatchStartTs } })
+        expect(error).toEqual({ id: 'fln__dgraph__start-ts-mismatch', message: 'The start_ts of the last request does not match the start_ts in the transaction', _errorData: { transactionStartTs: startTs, responseStartTs: mismatchStartTs } })
       })
 
 
@@ -367,7 +367,7 @@ describe('DgraphTransaction', () => {
         try { await transaction.mutate({ mutation }) }
         catch (e) { error = e }
 
-        expect(error).toEqual({ id: 'fln__dgraph__start-ts-mismatch', message: 'The start_ts on the last request does not match the start_ts in the transaction', _errorData: { transactionStartTs: startTs, responseStartTs: mismatchStartTs } })
+        expect(error).toEqual({ id: 'fln__dgraph__start-ts-mismatch', message: 'The start_ts of the last request does not match the start_ts in the transaction', _errorData: { transactionStartTs: startTs, responseStartTs: mismatchStartTs } })
       })
 
 

@@ -33,7 +33,7 @@ constructor ({ apiKey, endpoint, readOnly, bestEffort, timeout })
 * `transaction.mutate({ mutation, remove, commitNow }: DgraphMutationOptions): Promise<DgraphResponse>`
 * Mutate dgraph cloud instance.
 * Only accepts `rdf` triples syntax
-* If `commitNow` is true we send query param to dgraph cloud instance in this mutation api call that tells your instance to commit this mutation and that this is the last query or mutation that will come from this transation
+* If `commitNow` is true we send `commitNow=true` in this mutation api calls query param AND set `this.#isCommited = true`
 ```ts
 const t1 = new DgraphTransaction({ ...txnOptions() })
 
@@ -189,23 +189,25 @@ export default function txnOptions (pointMain?: boolean): { endpoint: string, ap
  * @typedef { Object } DgraphExtensionsTxn
  * @prop { number } start_ts - Start timestamp that uniquely identifies a transaction and doesn’t change over the transaction lifecycle
  * @prop { string } hash - Transaction start id like start_ts
- * @prop { string[] } keys - The set of keys modified by the transaction. Aids in transaction conflict detection. Every mutation sends back a new set of keys. `this.#mergeArrays` merges the response keys with the existing keys.
- * @prop { string[] } preds - The set of predicates modified by the transaction. Aids in predicate move detection. Every mutation sends back a new set of preds. `this.#mergeArrays` merges the response preds with the existing preds.
- * @prop { boolean } readOnly - Is this a readOnly transaction
- * @prop { boolean= } aborted - Has this transaction been aborted
+ * @prop { string[] } [keys] - The set of keys modified by the transaction. Aids in transaction conflict detection. Every mutation sends back a new set of keys. `this.#mergeArrays` merges the response keys with the existing keys.
+ * @prop { string[] } [preds] - The set of predicates modified by the transaction. Aids in predicate move detection. Every mutation sends back a new set of preds. `this.#mergeArrays` merges the response preds with the existing preds.
+ * @prop { boolean } [readOnly] - Is this a readOnly transaction
+ * @prop { boolean= } [aborted] - Has this transaction been aborted
  */
 ```
 
 ## ✨ Abort
 * `transaction.abort(): Promise<DgraphResponse | void>`
+* Abort all mutations that have been done with this transaction
 * IF transaction has done any mutations => send an api call to dgraph cloud instance to let it know no more incoming actions will be coming from this transaction and to `rollback` all that has been done by this transaction
-* IF transaction has done no mutations => set `this.#isAborted` to true so no further queries or mutations may happen with transaction
+* IF transaction has done no mutations => set `this.aborted` to true so no further queries or mutations may happen with transaction.
 
 
 ## 🚀 Commit
 * `transaction.commit(): Promise<DgraphResponse | void>`
-* IF transaction has done any mutations => send an api call to dgraph cloud instance to let it know no more incoming actions will be coming from this transaction and to `commit` all that has been done by this transaction
-* IF transaction has done no mutations => set `this.#isCommited` to true so no further queries or mutations may happen with transaction
+* Commit all mutations that have been done with this transaction
+* IF transaction has done any mutations => set `this.#isCommited = true` AND send a `/commit` api call to dgraph cloud instance to ask it know to commit this transaction (affirm all transaction's mutations)
+* IF transaction has done no mutations => set `this.#isCommited = true`
 
 
 ## 🔥 Errors we may throw

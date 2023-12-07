@@ -21,11 +21,11 @@ import { enumContentType } from './enumContentType.js'
 /**
  * @typedef { Object } DgraphExtensionsTxn
  * @prop { number } start_ts - Start timestamp that uniquely identifies a transaction and doesn’t change over the transaction lifecycle
- * @prop { string } hash
- * @prop { string[] } keys - The set of keys modified by the transaction. Aids in transaction conflict detection. Every mutation sends back a new set of keys. `this.#mergeArrays` merges the response keys with the existing keys.
- * @prop { string[] } preds - The set of predicates modified by the transaction. Aids in predicate move detection. Every mutation sends back a new set of preds. `this.#mergeArrays` merges the response preds with the existing preds.
- * @prop { boolean } readOnly
- * @prop { boolean= } aborted
+ * @prop { string } hash - Transaction start id like start_ts
+ * @prop { string[] } [keys] - The set of keys modified by the transaction. Aids in transaction conflict detection. Every mutation sends back a new set of keys. `this.#mergeArrays` merges the response keys with the existing keys.
+ * @prop { string[] } [preds] - The set of predicates modified by the transaction. Aids in predicate move detection. Every mutation sends back a new set of preds. `this.#mergeArrays` merges the response preds with the existing preds.
+ * @prop { boolean } [readOnly] - Is this a readOnly transaction
+ * @prop { boolean= } [aborted] - Has this transaction been aborted
  */
 
 

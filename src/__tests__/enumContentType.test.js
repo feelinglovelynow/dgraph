@@ -1,5 +1,5 @@
 import { test, expect } from '@jest/globals'
-import { enumContentType } from './enumContentType.js'
+import { enumContentType } from '../enumContentType.js'
 
 
 test('enumContentType equals', () => {

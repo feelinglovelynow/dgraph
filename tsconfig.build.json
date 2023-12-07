@@ -1,9 +1,9 @@
 {
   "files": [
-    "./src/DgraphTransaction.js",
-    "./src/enumContentType.js",
-    "./src/index.js",
-    "./src/typedefs.js",
+    "src/DgraphTransaction.js",
+    "src/enumContentType.js",
+    "src/index.js",
+    "src/typedefs.js",
   ],
   "compilerOptions": {
     "allowJs": true,

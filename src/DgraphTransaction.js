@@ -21,7 +21,9 @@ export class DgraphTransaction {
 
   /**
    * Creates a transaction object with lots of features to ease workflow with [dgraph cloud instances](https://dgraph.io/product). Guidance came from [here](https://dgraph.io/docs/dql/clients/raw-http/).
-   * @param { import('./typedefs.js').DgraphTransactionConstructor } params
+   * @param { import('./typedefs.js').DgraphTransactionConstructor } params - `{ apiKey: string, endpoint: string, readOnly?: boolean, bestEffort?: boolean, timeout: number }`
+   * @throws { { id: 'fln__dgraph__missing-apiKey', message: 'Transaction constructor needs an apiKey', _errorData: { apiKey } } } - `IF (!apiKey)`
+   * @throws { { id: 'fln__dgraph__missing-endpoint', message: 'Transaction constructor needs an endpoint', _errorData: { endpoint } } } - `IF (!endpoint)`
   */
   constructor (params) {
     this.#validateConstructor(params)
@@ -39,7 +41,9 @@ export class DgraphTransaction {
 
   /**
    * Throw an error if there is an issue in th constructor
-   * @param { import('./typedefs.js').DgraphTransactionConstructor } params
+   * @param { import('./typedefs.js').DgraphTransactionConstructor } params - `{ apiKey: string, endpoint: string, readOnly?: boolean, bestEffort?: boolean, timeout: number }`
+   * @throws { { id: 'fln__dgraph__missing-apiKey', message: 'Transaction constructor needs an apiKey', _errorData: { apiKey } } } - `IF (!apiKey)`
+   * @throws { { id: 'fln__dgraph__missing-endpoint', message: 'Transaction constructor needs an endpoint', _errorData: { endpoint } } } - `IF (!endpoint)`
    * @returns { void }
   */
   #validateConstructor (params) {
@@ -55,7 +59,10 @@ export class DgraphTransaction {
   /**
    * Query dgraph cloud instance
    * @param { boolean } closeWhenDone - IF closeWhenDone is set to true the transaction will not be allowed to be used again (does not send a request to dgraph cloud instance, just sets this.isClosed to true)
-   * @param { string } query - Only accepts DQL syntax.
+   * @param { string } query - Only accepts DQL syntax
+   * @throws { { id: 'fln__dgraph__already-aborted', message: 'Transaction already aborted', _errorData: { query } } } - `IF (this.#isAborted)`
+   * @throws { { id: 'fln__dgraph__already-commited', message: 'Transaction already commited', _errorData: { query } } } - `IF (this.#isCommited)`
+   * @throws { { id: 'fln__dgraph__already-closed', message: 'Transaction already closed', _errorData: { query } } } - `IF (this.#isClosed)`
    * @returns { Promise<import('./typedefs.js').DgraphResponse> }
   */
   async query (closeWhenDone, query) {
@@ -82,7 +89,10 @@ export class DgraphTransaction {
 
   /**
    * Throw an error if there is an issue with this query
-   * @param { string } query
+   * @param { string } query - Only accepts DQL syntax
+   * @throws { { id: 'fln__dgraph__already-aborted', message: 'Transaction already aborted', _errorData: { query } } } - `IF (this.#isAborted)`
+   * @throws { { id: 'fln__dgraph__already-commited', message: 'Transaction already commited', _errorData: { query } } } - `IF (this.#isCommited)`
+   * @throws { { id: 'fln__dgraph__already-closed', message: 'Transaction already closed', _errorData: { query } } } - `IF (this.#isClosed)`
    * @returns { void }
   */
   #validateQuery (query) {
@@ -93,8 +103,15 @@ export class DgraphTransaction {
 
 
   /**
-   * Mutate dgraph cloud instance. Only accepts `rdf` triples syntax. If `commitNow` is true we send query param to dgraph cloud instance in this mutation api call that this is the last query or mutation coming from this transation
-   * @param { import('./typedefs.js').DgraphMutationOptions } params
+   * Mutate dgraph cloud instance. Only accepts `rdf` triples syntax. If `commitNow` is true we send `commitNow=true` in this mutation api calls query param AND set `this.#isCommited = true`
+   * @param { import('./typedefs.js').DgraphMutationOptions } params - `{ mutation?: string, remove?: string, commitNow: boolean }` - Either `mutation` OR `remove` must be defined
+   * @throws { { id: 'fln__dgraph__missing-params', message: 'Mutate function needs a params object', _errorData: { params } } } - `IF (!params || typeof params !== 'object')`
+   * @throws { { id: 'fln__dgraph__empty-mutate', message: 'Mutate function requires a mutation or remove string', _errorData: { mutation, remove } } } - `IF (!mutation && !remove)`
+   * @throws { { id: 'fln__dgraph__full-mutate', message: 'Mutate function requires only a mutation or a remove string but not both' } } - `IF (mutation && remove)`
+   * @throws { { id: 'fln__dgraph__already-aborted', message: 'Transaction already aborted', _errorData: { mutation, remove, commitNow } } } - `IF (this.#isAborted)`
+   * @throws { { id: 'fln__dgraph__already-commited', message: 'Transaction already commited', _errorData: { mutation, remove, commitNow } } } - `IF (this.#isCommited)`
+   * @throws { { id: 'fln__dgraph__already-closed', message: 'Transaction already closed', _errorData: { mutation, remove, commitNow } } } - `IF (this.#isClosed)`
+   * @throws { { id: 'fln__dgraph__readonly-mutation', message: 'Readonly transactions may not contain mutations', _errorData: { mutation, remove, commitNow } } } - `IF (this.#readOnly)`
    * @returns { Promise<import('./typedefs.js').DgraphResponse> }
   */
   async mutate (params) {
@@ -122,7 +139,14 @@ export class DgraphTransaction {
 
   /**
    * Throw an error if there is an issue with this mutation
-   * @param { import('./typedefs.js').DgraphMutationOptions } params
+   * @param { import('./typedefs.js').DgraphMutationOptions } params - `{ mutation?: string, remove?: string, commitNow: boolean }` - Either `mutation` OR `remove` must be defined
+   * @throws { { id: 'fln__dgraph__missing-params', message: 'Mutate function needs a params object', _errorData: { params } } } - `IF (!params || typeof params !== 'object')`
+   * @throws { { id: 'fln__dgraph__empty-mutate', message: 'Mutate function requires a mutation or remove string', _errorData: { mutation, remove } } } - `IF (!mutation && !remove)`
+   * @throws { { id: 'fln__dgraph__full-mutate', message: 'Mutate function requires only a mutation or a remove string but not both' } } - `IF (mutation && remove)`
+   * @throws { { id: 'fln__dgraph__already-aborted', message: 'Transaction already aborted', _errorData: { mutation, remove, commitNow } } } - `IF (this.#isAborted)`
+   * @throws { { id: 'fln__dgraph__already-commited', message: 'Transaction already commited', _errorData: { mutation, remove, commitNow } } } - `IF (this.#isCommited)`
+   * @throws { { id: 'fln__dgraph__already-closed', message: 'Transaction already closed', _errorData: { mutation, remove, commitNow } } } - `IF (this.#isClosed)`
+   * @throws { { id: 'fln__dgraph__readonly-mutation', message: 'Readonly transactions may not contain mutations', _errorData: { mutation, remove, commitNow } } } - `IF (this.#readOnly)`
    * @returns { void }
   */
   #validateMutate (params) {
@@ -140,7 +164,10 @@ export class DgraphTransaction {
 
 
   /**
-   * Commit all mutations that have been done with this transaction. IF transaction has done any mutations => send an api call to dgraph cloud instance to let it know no more incoming actions will be coming from this transaction and to `commit` all that has been done by this transaction. IF transaction has done no mutations => set `this.isCommited` to true so no further queries or mutations may happen with transaction.
+   * Commit all mutations that have been done with this transaction. IF transaction has done any mutations => set `this.#isCommited = true` AND send a `/commit` api call to dgraph cloud instance to ask it know to commit this transaction (affirm all transaction's mutations). IF transaction has done no mutations => set `this.#isCommited = true`
+   * @throws { { id: 'fln__dgraph__already-aborted', message: 'Transaction already aborted' } } - `IF (this.#isAborted)`
+   * @throws { { id: 'fln__dgraph__already-commited', message: 'Transaction already commited' } } - `IF (this.#isCommited)`
+   * @throws { { id: 'fln__dgraph__already-closed', message: 'Transaction already closed' } } - `IF (this.#isClosed)`
    * @returns { Promise<void | import('./typedefs.js').DgraphResponse> }
   */  
   async commit () {
@@ -165,6 +192,9 @@ export class DgraphTransaction {
 
   /**
    * Throw an error if there is an issue with this commit
+   * @throws { { id: 'fln__dgraph__already-aborted', message: 'Transaction already aborted' } } - `IF (this.#isAborted)`
+   * @throws { { id: 'fln__dgraph__already-commited', message: 'Transaction already commited' } } - `IF (this.#isCommited)`
+   * @throws { { id: 'fln__dgraph__already-closed', message: 'Transaction already closed' } } - `IF (this.#isClosed)`
    * @returns { void }
   */
   #validateCommit () {
@@ -175,7 +205,7 @@ export class DgraphTransaction {
 
 
   /**
-   * Abort all mutations that have been done with this transaction. IF transaction has done any mutations => send an api call to dgraph cloud instance to let it know no more incoming actions will be coming from this transaction and to `rollback` all that has been done by this transaction. IF transaction has done no mutations => set `this.aborted` to true so no further queries or mutations may happen with transaction.
+   * Abort all mutations that have been done with this transaction. IF transaction has done any mutations => set `this.#isAborted = true` AND send `/commit?abort=true` api call to dgraph cloud instance to ask it to `rollback` all mutations that have been done by this transaction. IF transaction has done no mutations => set `this.#isAborted = true`
    * @returns { Promise<void | import('./typedefs.js').DgraphResponse> }
   */
   async abort () {
@@ -197,10 +227,11 @@ export class DgraphTransaction {
 
   /**
    * Fetch dgraph cloud instance
-   * @param { object } param
+   * @param { object } param `{ path: string, contentType?: enumContentType, body?: string }`
    * @param { string } param.path - Url piece after the endpoint `/`
    * @param { enumContentType } [param.contentType] - Optional: The option that will be sent in the header for the key
    * @param { string } [param.body] - Optional: Fetch request body
+   * @throws { e } - `IF (rFetch.status >= 300)`
    * @returns { Promise<import('./typedefs.js').DgraphResponse> }
   */  
   async #api  ({ path, body, contentType }) {
@@ -228,14 +259,14 @@ export class DgraphTransaction {
 
   /**
    * Sync extensions from response with their values in this transaction 
-   * @param { import('./typedefs.js').DgraphExtensionsTxn } extensionsTxn 
+   * @param { import('./typedefs.js').DgraphExtensionsTxn } extensionsTxn - `{ start_ts: number, hash: string, keys?: string[], preds?: string[], readOnly?: boolean, aborted?: boolean }`
   */
   #syncResponseExtensions (extensionsTxn) {
     if (extensionsTxn) {
       if (extensionsTxn.hash) this.#hash = extensionsTxn.hash
 
       if (this.#startTs === 0) this.#startTs = extensionsTxn.start_ts 
-      else if (this.#startTs !== extensionsTxn.start_ts) throw { id: 'fln__dgraph__start-ts-mismatch', message: 'The start_ts on the last request does not match the start_ts in the transaction', _errorData: { transactionStartTs: this.#startTs, responseStartTs: extensionsTxn.start_ts } }
+      else if (this.#startTs !== extensionsTxn.start_ts) throw { id: 'fln__dgraph__start-ts-mismatch', message: 'The start_ts of the last request does not match the start_ts in the transaction', _errorData: { transactionStartTs: this.#startTs, responseStartTs: extensionsTxn.start_ts } }
 
       if (extensionsTxn.keys) this.#keys = this.#mergeArrays(this.#keys, extensionsTxn.keys)
       if (extensionsTxn.preds) this.#preds = this.#mergeArrays(this.#preds, extensionsTxn.preds)

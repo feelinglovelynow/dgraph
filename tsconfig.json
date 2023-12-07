@@ -1,11 +1,11 @@
 {
   "files": [
-    "./src/DgraphTransaction.js",
-    "./src/DgraphTransaction.test.js",
-    "./src/enumContentType.js",
-    "./src/enumContentType.test.js",
-    "./src/index.js",
-    "./src/typedefs.js",
+    "src/__tests__/DgraphTransaction.test.js",
+    "src/__tests__/enumContentType.test.js",
+    "src/DgraphTransaction.js",
+    "src/enumContentType.js",
+    "src/index.js",
+    "src/typedefs.js",
   ],
   "compilerOptions": {
     "noEmit": true,
